@@ -1,0 +1,329 @@
+'*******************************************************************
+'*   Ten module  : Main                                            *
+'*   Noi dung   : Chua cac ham chay flow chinh cua chuong trinh    *
+'*   Author: LVN-HoaPV                                             *
+'*   Date: 2022/01/22                                              *
+'*   Lich su chinh sua:                                            *
+'*   Version  | Noi dung chinh sua                                 *
+'*      1.0   | Tao moi                                            *
+'*******************************************************************
+
+
+
+'*******************************************************************
+'*   Ten phuong thuc   : mainProgress                              *
+'*   Noi dung: Chay flow chinh cua chuong trinh:                   *
+'*             Doc config -> Doc data -> Xac dinh pattern          *
+'*                        -> Load data len form                    *
+'*   Author: LVN-HoaPV                                             *
+'*   Date: 2022/01/22                                              *
+'*   Lich su chinh sua:                                            *
+'*   Version  | Noi dung chinh sua                                 *
+'*      1.0   | Tao moi                                            *
+'*******************************************************************
+Sub mainProgress()
+    Dim config As ConfigInfo                            'Doi tuong doc config
+    Dim analysis As AnalysisInfo                        'Doi tuong doc data tinh toan
+    Dim inputForm As StaticLoadForm                     'Form nhap static load
+    
+    'Khoi tao cac doi tuong
+    Set analysis = New AnalysisInfo
+    Set config = New ConfigInfo
+    Set inputForm = New StaticLoadForm
+    'Load va validate config
+    config.loadAndValidateDictionary
+    config.loadAndValidateDataColumn
+    config.loadAndValidateForceRound
+    'Doc va validate data lan tinh toan
+    Call analysis.readAndValidateAnalysisData(ActiveCell.Row, config)
+    'Xac dinh pattern tinh
+    Call analysis.determineInputPattern
+    'Nhap so len form theo pattern tuong ung
+    Select Case analysis.getInputPattern
+        Case Constant.PATTERN_L_R
+            Call setValueToStaticFormPatternLR(inputForm, analysis)
+            inputForm.Show
+        Case Constant.PATTERN_R_L
+            Call setValueToStaticFormPatternRL(inputForm, analysis)
+            inputForm.Show
+        Case Constant.PATTERN_U
+            Call setValueToStaticFormPatternU(inputForm, analysis)
+            inputForm.Show
+        Case Constant.PATTERN_D
+            Call setValueToStaticFormPatternD(inputForm, analysis)
+            inputForm.Show
+        Case Constant.PATTERN_F_B_GP
+            Call setValueToStaticFormPatternFBGP(inputForm, analysis)
+            inputForm.Show
+        Case Constant.PATTERN_F_B_WCTR
+            Call setValueToStaticFormPatternFBWCTR(inputForm, analysis)
+            inputForm.Show
+        Case Constant.PATTERN_B_F_GP
+            Call setValueToStaticFormPatternBFGP(inputForm, analysis)
+            inputForm.Show
+        Case Constant.PATTERN_B_F_WCTR
+            Call setValueToStaticFormPatternBFWCTR(inputForm, analysis)
+            inputForm.Show
+        Case Else
+            MsgBox "Pattern khong ho tro"
+    End Select
+    
+End Sub
+
+
+'*******************************************************************
+'*   Ten phuong thuc   : writeCommandFile                          *
+'*   Noi dung: Ghi list command ra thanh file                      *
+'*   Author: LVN-HoaPV                                             *
+'*   Date: 2022/01/22                                              *
+'*   Lich su chinh sua:                                            *
+'*   Version  | Noi dung chinh sua                                 *
+'*      1.0   | Tao moi                                            *
+'*******************************************************************
+Sub writeCommandFile()
+    Dim cmdSheet As Worksheet                           'Sheet chua list command
+    Dim outputFile As String                            'Duong dan file output
+    
+    'Try-catch
+    On Error GoTo writeCommandFileError
+    'Set sheet command
+    Set cmdSheet = ThisWorkbook.Worksheets("Command")
+    'Neu khong co command nao thi bao loi va thoat chuong trinh
+    If cmdSheet.Cells(6, "C").Value = "" Then
+        Call Common.catchError("Chua co command nao")
+    End If
+    'Set duong dan file output
+    outputFile = cmdSheet.Cells(2, "C").Value
+    Open outputFile For Output As #1
+    'Duyet qua list command va ghi vao file
+    For i = 6 To 200
+        If cmdSheet.Cells(i, "C").Value <> "" Then
+            Print #1, cmdSheet.Cells(i, "C").Value
+        Else
+            Exit For
+        End If
+    Next
+    Close #1
+    'Hien thi message hoan thanh
+    MsgBox "Ghi file command hoan tat", vbInformation
+    Exit Sub
+writeCommandFileError:
+    Call Common.catchError("Khong tim thay sheet command hoac co loi xay ra khi ghi file command")
+
+End Sub
+
+'*******************************************************************
+'*   Ten phuong thuc   : clearCommand                              *
+'*   Noi dung: Reset xoa het noi dung trong sheet Command          *
+'*   Author: LVN-HoaPV                                             *
+'*   Date: 2022/01/22                                              *
+'*   Lich su chinh sua:                                            *
+'*   Version  | Noi dung chinh sua                                 *
+'*      1.0   | Tao moi                                            *
+'*******************************************************************
+Sub clearCommand()
+    Dim cmdSheet As Worksheet                             'Sheet chua list command
+    
+    'Try-catch
+    On Error GoTo clearCommandError
+    
+    Set cmdSheet = ThisWorkbook.Worksheets("Command")
+    'Xoa link file output
+    cmdSheet.Cells(2, "C").Value = ""
+    'Xoa list command
+    For i = 6 To 200
+        cmdSheet.Cells(i, "C").Value = ""
+    Next
+    Exit Sub
+    
+clearCommandError:
+    Call Common.catchError("Khong tim thay sheet command")
+End Sub
+
+'*******************************************************************
+'*   Ten phuong thuc   : setValueToStaticFormCommon                *
+'*   Noi dung: Set cac hang muc cho form static load               *
+'*                       (cac hang muc chung voi moi pattern)      *
+'*   Author: LVN-HoaPV                                             *
+'*   Date: 2022/01/22                                              *
+'*   Lich su chinh sua:                                            *
+'*   Version  | Noi dung chinh sua                                 *
+'*      1.0   | Tao moi                                            *
+'*******************************************************************
+Private Sub setValueToStaticFormCommon(outputForm As StaticLoadForm, ByVal analysisObj As AnalysisInfo)
+    Call Common.setValueToField(outputForm, "AssyName", analysisObj.getModelName)
+    Call Common.setValueToField(outputForm, "AssyVariant", "default")
+    Call Common.setValueToField(outputForm, "OutPrefix", analysisObj.getAnalysisName)
+    Call Common.setValueToField(outputForm, "StepNum", 10)
+    Call Common.setValueToField(outputForm, "SimulationMode", "interactive")
+    Call Common.setValueToField(outputForm, "VerticalMode", "Wheel Center")
+    Call Common.setValueToField(outputForm, "CoorSystem", "vehicle")
+End Sub
+
+
+'*******************************************************************
+'*   Ten phuong thuc   : setValueToStaticFormCommon                *
+'*   Noi dung: Set cac hang muc cho form static load               *
+'*                       (pattern trai->phai)                      *
+'*   Author: LVN-HoaPV                                             *
+'*   Date: 2022/01/22                                              *
+'*   Lich su chinh sua:                                            *
+'*   Version  | Noi dung chinh sua                                 *
+'*      1.0   | Tao moi                                            *
+'*******************************************************************
+Private Sub setValueToStaticFormPatternLR(outputForm As StaticLoadForm, ByVal analysisObj As AnalysisInfo)
+    Call setValueToStaticFormCommon(outputForm, analysisObj)
+    Call Common.setValueToField(outputForm, "CornForceUprLeft", analysisObj.getInputForce * -1)
+    If analysisObj.getWheelNum = 2 Then
+        Call Common.setValueToField(outputForm, "CornForceUprRight", analysisObj.getInputForce * -1)
+    End If
+    Call Common.setValueToField(outputForm, "VerticalInput", Constant.VERTICAL_INPUT_WHE_CEN_HEI)
+End Sub
+
+
+'*******************************************************************
+'*   Ten phuong thuc   : setValueToStaticFormCommon                *
+'*   Noi dung: Set cac hang muc cho form static load               *
+'*                       (pattern phai->trai)                      *
+'*   Author: LVN-HoaPV                                             *
+'*   Date: 2022/01/22                                              *
+'*   Lich su chinh sua:                                            *
+'*   Version  | Noi dung chinh sua                                 *
+'*      1.0   | Tao moi                                            *
+'*******************************************************************
+Private Sub setValueToStaticFormPatternRL(outputForm As StaticLoadForm, ByVal analysisObj As AnalysisInfo)
+    Call setValueToStaticFormCommon(outputForm, analysisObj)
+    Call Common.setValueToField(outputForm, "CornForceUprLeft", analysisObj.getInputForce)
+    If analysisObj.getWheelNum = 2 Then
+        Call Common.setValueToField(outputForm, "CornForceUprRight", analysisObj.getInputForce)
+    End If
+    Call Common.setValueToField(outputForm, "VerticalInput", Constant.VERTICAL_INPUT_WHE_CEN_HEI)
+End Sub
+
+
+'*******************************************************************
+'*   Ten phuong thuc   : setValueToStaticFormCommon                *
+'*   Noi dung: Set cac hang muc cho form static load               *
+'*                       (pattern duoi->tren)                      *
+'*   Author: LVN-HoaPV                                             *
+'*   Date: 2022/01/22                                              *
+'*   Lich su chinh sua:                                            *
+'*   Version  | Noi dung chinh sua                                 *
+'*      1.0   | Tao moi                                            *
+'*******************************************************************
+Private Sub setValueToStaticFormPatternU(outputForm As StaticLoadForm, ByVal analysisObj As AnalysisInfo)
+    Call setValueToStaticFormCommon(outputForm, analysisObj)
+    Call Common.setValueToField(outputForm, "VerticalInput", Constant.VERTICAL_INPUT_WHE_VER_FOR)
+    Call Common.setValueToField(outputForm, "VerLenLwrLeft", analysisObj.getNormalPreload)
+    Call Common.setValueToField(outputForm, "VerLenUprLeft", analysisObj.getInputForce)
+    Call Common.setValueToField(outputForm, "VerLenLwrRight", analysisObj.getNormalPreload)
+    If analysisObj.getWheelNum = 2 Then
+        Call Common.setValueToField(outputForm, "VerLenUprRight", analysisObj.getInputForce)
+    Else
+        Call Common.setValueToField(outputForm, "VerLenUprRight", analysisObj.getNormalPreload)
+    End If
+End Sub
+
+
+'*******************************************************************
+'*   Ten phuong thuc   : setValueToStaticFormCommon                *
+'*   Noi dung: Set cac hang muc cho form static load               *
+'*                       (pattern tren->duoi)                      *
+'*   Author: LVN-HoaPV                                             *
+'*   Date: 2022/01/22                                              *
+'*   Lich su chinh sua:                                            *
+'*   Version  | Noi dung chinh sua                                 *
+'*      1.0   | Tao moi                                            *
+'*******************************************************************
+Private Sub setValueToStaticFormPatternD(outputForm As StaticLoadForm, ByVal analysisObj As AnalysisInfo)
+    Call setValueToStaticFormCommon(outputForm, analysisObj)
+    Call Common.setValueToField(outputForm, "VerticalInput", Constant.VERTICAL_INPUT_WHE_VER_FOR)
+    Call Common.setValueToField(outputForm, "VerLenLwrLeft", analysisObj.getNormalPreload)
+    Call Common.setValueToField(outputForm, "VerLenUprLeft", analysisObj.getInputForce * -1)
+    Call Common.setValueToField(outputForm, "VerLenLwrRight", analysisObj.getNormalPreload)
+    If analysisObj.getWheelNum = 2 Then
+        Call Common.setValueToField(outputForm, "VerLenUprRight", analysisObj.getInputForce * -1)
+    Else
+        Call Common.setValueToField(outputForm, "VerLenUprRight", analysisObj.getNormalPreload)
+    End If
+End Sub
+
+
+'*******************************************************************
+'*   Ten phuong thuc   : setValueToStaticFormCommon                *
+'*   Noi dung: Set cac hang muc cho form static load               *
+'*                       (pattern truoc->sau(diem tiep dat))       *
+'*   Author: LVN-HoaPV                                             *
+'*   Date: 2022/01/22                                              *
+'*   Lich su chinh sua:                                            *
+'*   Version  | Noi dung chinh sua                                 *
+'*      1.0   | Tao moi                                            *
+'*******************************************************************
+Private Sub setValueToStaticFormPatternFBGP(outputForm As StaticLoadForm, ByVal analysisObj As AnalysisInfo)
+    Call setValueToStaticFormCommon(outputForm, analysisObj)
+    Call Common.setValueToField(outputForm, "VerticalInput", Constant.VERTICAL_INPUT_WHE_CEN_HEI)
+    Call Common.setValueToField(outputForm, "BraForceUprLeft", analysisObj.getInputForce)
+    If analysisObj.getWheelNum = 2 Then
+        Call Common.setValueToField(outputForm, "BraForceUprRight", analysisObj.getInputForce)
+    End If
+End Sub
+
+
+'*******************************************************************
+'*   Ten phuong thuc   : setValueToStaticFormCommon                *
+'*   Noi dung: Set cac hang muc cho form static load               *
+'*                       (pattern truoc->sau(WCTR))                *
+'*   Author: LVN-HoaPV                                             *
+'*   Date: 2022/01/22                                              *
+'*   Lich su chinh sua:                                            *
+'*   Version  | Noi dung chinh sua                                 *
+'*      1.0   | Tao moi                                            *
+'*******************************************************************
+Private Sub setValueToStaticFormPatternFBWCTR(outputForm As StaticLoadForm, ByVal analysisObj As AnalysisInfo)
+    Call setValueToStaticFormCommon(outputForm, analysisObj)
+    Call Common.setValueToField(outputForm, "VerticalInput", Constant.VERTICAL_INPUT_WHE_CEN_HEI)
+    Call Common.setValueToField(outputForm, "TracForceUprLeft", analysisObj.getInputForce * -1)
+    If analysisObj.getWheelNum = 2 Then
+        Call Common.setValueToField(outputForm, "TracForceUprRight", analysisObj.getInputForce * -1)
+    End If
+End Sub
+
+
+'*******************************************************************
+'*   Ten phuong thuc   : setValueToStaticFormCommon                *
+'*   Noi dung: Set cac hang muc cho form static load               *
+'*                       (pattern sau->truoc(diem tiep dat))       *
+'*   Author: LVN-HoaPV                                             *
+'*   Date: 2022/01/22                                              *
+'*   Lich su chinh sua:                                            *
+'*   Version  | Noi dung chinh sua                                 *
+'*      1.0   | Tao moi                                            *
+'*******************************************************************
+Private Sub setValueToStaticFormPatternBFGP(outputForm As StaticLoadForm, ByVal analysisObj As AnalysisInfo)
+    Call setValueToStaticFormCommon(outputForm, analysisObj)
+    Call Common.setValueToField(outputForm, "VerticalInput", Constant.VERTICAL_INPUT_WHE_CEN_HEI)
+    Call Common.setValueToField(outputForm, "BraForceUprLeft", analysisObj.getInputForce * -1)
+    If analysisObj.getWheelNum = 2 Then
+        Call Common.setValueToField(outputForm, "BraForceUprRight", analysisObj.getInputForce * -1)
+    End If
+End Sub
+
+
+'*******************************************************************
+'*   Ten phuong thuc   : setValueToStaticFormCommon                *
+'*   Noi dung: Set cac hang muc cho form static load               *
+'*                       (pattern sau->truoc(WCTR))                *
+'*   Author: LVN-HoaPV                                             *
+'*   Date: 2022/01/22                                              *
+'*   Lich su chinh sua:                                            *
+'*   Version  | Noi dung chinh sua                                 *
+'*      1.0   | Tao moi                                            *
+'*******************************************************************
+Private Sub setValueToStaticFormPatternBFWCTR(outputForm As StaticLoadForm, ByVal analysisObj As AnalysisInfo)
+    Call setValueToStaticFormCommon(outputForm, analysisObj)
+    Call Common.setValueToField(outputForm, "VerticalInput", Constant.VERTICAL_INPUT_WHE_CEN_HEI)
+    Call Common.setValueToField(outputForm, "TracForceUprLeft", analysisObj.getInputForce)
+    If analysisObj.getWheelNum = 2 Then
+        Call Common.setValueToField(outputForm, "TracForceUprRight", analysisObj.getInputForce)
+    End If
+End Sub
