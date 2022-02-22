@@ -1,0 +1,282 @@
+'*******************************************************************
+'*   Ten class: ConfigInfo                                         *
+'*   Noi dung: Doc cac gia tri tu sheet Config                     *
+'*   Author: LVN-HoaPV                                             *
+'*   Date: 2022/01/22                                              *
+'*   Lich su chinh sua:                                            *
+'*   Version  | Noi dung chinh sua                                 *
+'*      1.0   | Tao moi                                            *
+'*******************************************************************
+Private configWS As Worksheet                       'Sheet chua gia tri config
+Private directionDictionary As Hashtable            'Tu dien cac gia tri huong nhap
+Private inputPointDictionary As Hashtable           'Tu dien cac gia tri diem nhap luc
+Private wheelNumDictionary As Hashtable             'Tu dien cac gia tri so banh
+Private analysisNameCol As String                   'Cot doc gia tri ten lan tinh toan
+Private directionCol As String                      'Cot doc gia tri huong nhap luc
+Private inputPointCol As String                     'Cot doc gia tri diem nhap luc
+Private wheelNumCol As String                       'Cot doc gia tri so banh
+Private inputForceCol As String                     'Cot doc gia tri luc nhap
+Private inputForceRound As Integer                  'Lam tron phan thap phan luc nhap
+
+'*******************************************************************
+'*   Ten phuong thuc  : Class_Initialize (phuong thuc khoi tao)    *
+'*   Noi dung: Khoi tao cac dictionary, set sheet Config           *
+'*   Author: LVN-HoaPV                                             *
+'*   Date: 2022/01/22                                              *
+'*   Lich su chinh sua:                                            *
+'*   Version  | Noi dung chinh sua                                 *
+'*      1.0   | Tao moi                                            *
+'*******************************************************************
+Private Sub Class_Initialize()
+
+    loadConfigWS
+    Set directionDictionary = New Hashtable
+    Set inputPointDictionary = New Hashtable
+    Set wheelNumDictionary = New Hashtable
+    
+End Sub
+
+'*******************************************************************
+'*   Getter and setter cho cac thuoc tinh                          *
+'*******************************************************************
+Public Property Get getConfigWS() As Worksheet
+    Set getConfigWS = configWS
+End Property
+
+'-------------------------------
+Public Property Let setConfigWS(newConfigWS As Worksheet)
+    Set configWS = newConfigWS
+End Property
+
+'-------------------------------
+Public Property Get getDirectionDictionary() As Hashtable
+    Set getDirectionDictionary = directionDictionary
+End Property
+
+'-------------------------------
+Public Property Let setDirectionDictionary(newDirectionDictionary As Hashtable)
+    Set directionDictionary = newDirectionDictionary
+End Property
+
+'-------------------------------
+Public Property Get getInputPointDictionary() As Hashtable
+    Set getInputPointDictionary = inputPointDictionary
+End Property
+
+'-------------------------------
+Public Property Let setInputPointDictionary(newInputPointDictionary As Hashtable)
+    Set inputPointDictionary = newInputPointDictionary
+End Property
+
+'-------------------------------
+Public Property Get getWheelNumDictionary() As Hashtable
+    Set getWheelNumDictionary = wheelNumDictionary
+End Property
+
+'-------------------------------
+Public Property Let setWheelNumDictionary(newWheelNumDictionary As Hashtable)
+    Set wheelNumDictionary = newWheelNumDictionary
+End Property
+
+'-------------------------------
+Public Property Get getAnalysisNameCol() As String
+    getAnalysisNameCol = analysisNameCol
+End Property
+
+'-------------------------------
+Public Property Let setAnalysisNameCol(newAnalysisNameCol As String)
+    analysisNameCol = newAnalysisNameCol
+End Property
+
+'-------------------------------
+Public Property Get getDirectionCol() As String
+    getDirectionCol = directionCol
+End Property
+
+'-------------------------------
+Public Property Let setDirectionCol(newDirectionCol As String)
+    directionCol = newDirectionCol
+End Property
+
+'-------------------------------
+Public Property Get getInputPointCol() As String
+    getInputPointCol = inputPointCol
+End Property
+
+'-------------------------------
+Public Property Let setInputPointCol(newInputPointCol As String)
+    inputPointCol = newInputPointCol
+End Property
+
+'-------------------------------
+Public Property Get getWheelNumCol() As String
+    getWheelNumCol = wheelNumCol
+End Property
+
+'-------------------------------
+Public Property Let setWheelNumCol(newWheelNumCol As String)
+    wheelNumCol = newWheelNumCol
+End Property
+'-------------------------------
+Public Property Get getInputForceCol() As String
+    getInputForceCol = inputForceCol
+End Property
+
+'-------------------------------
+Public Property Let setInputForceCol(newInputForceCol As String)
+    inputForceCol = newInputForceCol
+End Property
+
+'-------------------------------
+Public Property Get getInputForceRound() As Integer
+    getInputForceRound = inputForceRound
+End Property
+
+'-------------------------------
+Public Property Let setInputForceRound(newInputForceRound As Integer)
+    inputForceRound = newInputForceRound
+End Property
+
+'*******************************************************************
+'*   Ten phuong thuc  : loadConfigWS                               *
+'*   Noi dung: Tim va gan sheet Config cho thuoc tinh cua object   *
+'*   Author: LVN-HoaPV                                             *
+'*   Date: 2022/01/22                                              *
+'*   Lich su chinh sua:                                            *
+'*   Version  | Noi dung chinh sua                                 *
+'*      1.0   | Tao moi                                            *
+'*******************************************************************
+Private Sub loadConfigWS()
+    'Try-catch
+    On Error GoTo notFoundConfigSheet
+    'Gan sheet Config cho object
+    setConfigWS = ThisWorkbook.Worksheets("Config")
+    Exit Sub
+'Neu khong gan duoc thi bao loi va ket thuc chuong trinh
+notFoundConfigSheet:
+    Call Common.catchError("Khong tim thay sheet Config")
+End Sub
+
+'*******************************************************************
+'*   Ten phuong thuc  : loadAndValidateDictionary                  *
+'*   Noi dung: Doc dictionary tu sheet Config                      *
+'*             Validate cac gia tri doc duoc                       *
+'*   Author: LVN-HoaPV                                             *
+'*   Date: 2022/01/22                                              *
+'*   Lich su chinh sua:                                            *
+'*   Version  | Noi dung chinh sua                                 *
+'*      1.0   | Tao moi                                            *
+'*******************************************************************
+Public Sub loadAndValidateDictionary()
+    Dim i As Integer
+    Dim endRow As Integer
+    Dim readtimeDirectionDictionary As Hashtable    'Bien doc gia tri directionDictionary tu sheet Config
+    Dim readtimeInputPointDictionary As Hashtable   'Bien doc gia tri inputPointDictionary tu sheet Config
+    Dim readtimeWheelNumDictionary As Hashtable     'Bien doc gia tri wheelNumDictionary tu sheet Config
+    
+    'Try-catch
+    On Error GoTo loadDictionaryError
+    
+    Set readtimeDirectionDictionary = New Hashtable
+    Set readtimeInputPointDictionary = New Hashtable
+    Set readtimeWheelNumDictionary = New Hashtable
+    
+    'Xac dinh vi tri doc directionDictionary trong sheet Config
+    If configWS.Cells(5, "G").Value = "" Then
+        endRow = 0
+    Else
+        endRow = 5
+        While (configWS.Cells(endRow + 1, "G") <> "")
+            endRow = endRow + 1
+        Wend
+    End If
+    'Doc gia tri directionDictionary tu sheet Config
+    For i = 5 To endRow
+        readtimeDirectionDictionary.Add configWS.Cells(i, "G").Value, configWS.Cells(i, "H").Value
+    Next
+    'Xac dinh vi tri doc inputPointDictionary trong sheet Config
+    If configWS.Cells(5, "I").Value = "" Then
+        endRow = 0
+    Else
+        endRow = 5
+        While (configWS.Cells(endRow + 1, "I") <> "")
+            endRow = endRow + 1
+        Wend
+    End If
+    'Doc gia tri inputPointDictionary tu sheet Config
+    For i = 5 To endRow
+        readtimeInputPointDictionary.Add configWS.Cells(i, "I").Value, configWS.Cells(i, "J").Value
+    Next
+    'Xac dinh vi tri doc wheelNumDictionary trong sheet Config
+    If configWS.Cells(5, "K").Value = "" Then
+        endRow = 0
+    Else
+        endRow = 5
+        While (configWS.Cells(endRow + 1, "K") <> "")
+            endRow = endRow + 1
+        Wend
+    End If
+    'Doc gia tri wheelNumDictionary tu sheet Config
+    For i = 5 To endRow
+        readtimeWheelNumDictionary.Add configWS.Cells(i, "K").Value, configWS.Cells(i, "L").Value
+    Next
+    'Validate: tat ca cac dictionary deu phai duoc config
+    If (readtimeDirectionDictionary.Count = 0) Or (readtimeInputPointDictionary.Count = 0) Or (readtimeWheelNumDictionary.Count = 0) Then
+        GoTo loadDictionaryError
+    End If
+    'Tat ca cac dictionary deu duoc config thi tien hanh set vao cac thuoc tinh cua object
+    setDirectionDictionary = readtimeDirectionDictionary
+    setInputPointDictionary = readtimeInputPointDictionary
+    setWheelNumDictionary = readtimeWheelNumDictionary
+    Exit Sub
+'Neu co loi thi hien thi message loi va ket thuc chuong trinh
+loadDictionaryError:
+    Call Common.catchError("Co loi khi doc dictionary. Khong duoc co dictionary rong hoac chua key trung lap")
+    
+End Sub
+
+'*******************************************************************
+'*   Ten phuong thuc  : loadAndValidateDataColumn                  *
+'*   Noi dung: Doc cac cot lay data tu sheet Config                *
+'*             Validate cac gia tri doc duoc                       *
+'*   Author: LVN-HoaPV                                             *
+'*   Date: 2022/01/22                                              *
+'*   Lich su chinh sua:                                            *
+'*   Version  | Noi dung chinh sua                                 *
+'*      1.0   | Tao moi                                            *
+'*******************************************************************
+Public Sub loadAndValidateDataColumn()
+    'Doc cac cot lay data tu sheet Config va gan cho thuoc tinh cua object
+    setAnalysisNameCol = configWS.Cells(3, "C").Value
+    setDirectionCol = configWS.Cells(4, "C").Value
+    setInputPointCol = configWS.Cells(5, "C").Value
+    setWheelNumCol = configWS.Cells(6, "C").Value
+    setInputForceCol = configWS.Cells(7, "C").Value
+    'Neu gia tri doc duoc khong phai la ten cot thi bao loi va ket thuc chuong trinh
+    If (Not Common.isColumn(analysisNameCol)) Or (Not Common.isColumn(directionCol)) Or (Not Common.isColumn(inputPointCol)) Or (Not Common.isColumn(wheelNumCol)) Or (Not Common.isColumn(inputForceCol)) Then
+        Call Common.catchError("Config cot lay data sai. Hay dien ten cot hop le")
+    End If
+End Sub
+
+'*******************************************************************
+'*   Ten phuong thuc  : loadAndValidateForceRound                  *
+'*   Noi dung: Doc va validate config lam tron                     *
+'*                             so chu so thap phan cua luc         *
+'*   Author: LVN-HoaPV                                             *
+'*   Date: 2022/01/22                                              *
+'*   Lich su chinh sua:                                            *
+'*   Version  | Noi dung chinh sua                                 *
+'*      1.0   | Tao moi                                            *
+'*******************************************************************
+Public Sub loadAndValidateForceRound()
+    'Try-catch
+    On Error GoTo invalidRoundConfig
+    If configWS.Cells(13, "B").Value >= 0 Then
+        setInputForceRound = configWS.Cells(13, "B").Value
+    End If
+    Exit Sub
+'Neu khong phai la so nguyen >=0 thi bao loi
+invalidRoundConfig:
+    Call Common.catchError("Config gia tri lam tron sai. Hay nhap so nguyen >=0")
+End Sub
+
