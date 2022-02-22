@@ -1,0 +1,83 @@
+'*******************************************************************
+'*   Ten module  : Common                                          *
+'*   Noi dung   : Chua cac ham dung chung trong chuong trinh       *
+'*   Author: LVN-HoaPV                                             *
+'*   Date: 2022/01/22                                              *
+'*   Lich su chinh sua:                                            *
+'*   Version  | Noi dung chinh sua                                 *
+'*      1.0   | Tao moi                                            *
+'*******************************************************************
+
+
+
+
+'*******************************************************************
+'*   Ten phuong thuc   : catchError                                *
+'*   Noi dung: Hien thi message loi va ket thuc chuong trinh       *
+'*   List tham so:                                                 *
+'*      msg            : Noi dung message loi muon hien thi        *
+'*   Author: LVN-HoaPV                                             *
+'*   Date: 2022/01/22                                              *
+'*   Lich su chinh sua:                                            *
+'*   Version  | Noi dung chinh sua                                 *
+'*      1.0   | Tao moi                                            *
+'*******************************************************************
+Public Sub catchError(ByVal msg As String)
+    'Hien thi dialog va message loi
+    MsgBox "[ERROR] " & msg, vbCritical
+    'Ket thuc chuong trinh
+    End
+End Sub
+
+'*******************************************************************
+'*   Ten ham            : isColumn                                 *
+'*   Noi dung: Kiem tra 1 string co phai ten cot khong             *
+'*   List tham so:                                                 *
+'*      inputCol        : Ten cot muon kiem tra                    *
+'*   Return: true neu string truyen vao la ten cot                 *
+'*           false neu string truyen vao khong phai la ten cot     *
+'*   Author: LVN-HoaPV                                             *
+'*   Date: 2022/01/22                                              *
+'*   Lich su chinh sua:                                            *
+'*   Version  | Noi dung chinh sua                                 *
+'*      1.0   | Tao moi                                            *
+'*******************************************************************
+Public Function isColumn(ByVal inputCol As String) As Boolean
+    Dim rngForCheck  As Range
+    'Try-catch
+    On Error GoTo invalidColumn
+    'Thu set 1 range
+    Set rngForCheck = Range(inputCol & "1")
+    'Neu set duoc thi inputCol la ten cot
+    isColumn = True
+    Exit Function
+'Neu khong set duoc thi inputCol khong phai la ten cot
+invalidColumn:
+    isColumn = False
+End Function
+
+'*******************************************************************
+'*   Ten phuong thuc    : setValueToField                          *
+'*   Noi dung: Thiet lap gia tri cho cac muc trong form static load*
+'*   List tham so:                                                 *
+'*      outputForm      : Form static load can set gia tri         *
+'*      outputObjectName: Hang muc muon set gia tri                *
+'*      inputValue      : Gia tri muon thiet lap cho hang muc      *
+'*   Author: LVN-HoaPV                                             *
+'*   Date: 2022/01/22                                              *
+'*   Lich su chinh sua:                                            *
+'*   Version  | Noi dung chinh sua                                 *
+'*      1.0   | Tao moi                                            *
+'*******************************************************************
+Public Sub setValueToField(outputForm As StaticLoadForm, outputObjectName As String, ByVal inputValue As Variant)
+    Dim obj As Object                           'Bien lay ten hang muc tu form
+    
+    'Lap qua cac object cua form
+    For Each obj In outputForm.Controls
+        'Neu tim thay doi tuong can set thi tien hanh set gia tri va thoat
+        If obj.Name = outputObjectName Then
+            obj.Value = inputValue
+            Exit For
+        End If
+    Next
+End Sub
