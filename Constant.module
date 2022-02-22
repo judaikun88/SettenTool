@@ -1,0 +1,49 @@
+'*******************************************************************
+'*   Ten module  : Constant                                        *
+'*   Noi dung   : Chua cac hang so dung chung trong chuong trinh   *
+'*   Author: LVN-HoaPV                                             *
+'*   Date: 2022/01/22                                              *
+'*   Lich su chinh sua:                                            *
+'*   Version  | Noi dung chinh sua                                 *
+'*      1.0   | Tao moi                                            *
+'*******************************************************************
+
+
+'Cac hang so huong nhap luc
+Public Const DIRECTION_L_R = "LEFT_TO_RIGHT"
+Public Const DIRECTION_R_L = "RIGHT_TO_LEFT"
+Public Const DIRECTION_UP = "UP"
+Public Const DIRECTION_DOWN = "DOWN"
+Public Const DIRECTION_F_B = "FRONT_TO_BACK"
+Public Const DIRECTION_B_F = "BACK_TO_FRONT"
+
+'Cac hang so diem nhap luc
+Public Const INPUT_POINT_GP = "GP"
+Public Const INPUT_POINT_WCTR = "WCTR"
+
+'Cac hang so pattern tinh toan
+Public Const PATTERN_UNSUPPORTED = 0
+Public Const PATTERN_L_R = 1
+Public Const PATTERN_R_L = 2
+Public Const PATTERN_U = 3
+Public Const PATTERN_D = 4
+Public Const PATTERN_F_B_GP = 5
+Public Const PATTERN_F_B_WCTR = 6
+Public Const PATTERN_B_F_GP = 7
+Public Const PATTERN_B_F_WCTR = 8
+
+'Cac hang so cho combobox Vertical Mode
+Public Const VERTICAL_MODE_WHEEL_CENTER = "Wheel Center"
+Public Const VERTICAL_MODE_CONTACT_PATCH = "Contact Patch"
+
+'Cac hang so cho combobox Vertical Input
+Public Const VERTICAL_INPUT_CON_PAT_HEI = "Contact Patch Height"
+Public Const VERTICAL_INPUT_WHE_CEN_HEI = "Wheel Center Height"
+Public Const VERTICAL_INPUT_WHE_VER_FOR = "Wheel Vertical Force"
+
+'Cac hang so cho combobox Simulate Mode
+Public Const SIMULATE_MODE_INTERACTIVE = "interactive"
+Public Const SIMULATE_MODE_GRAPHICAL = "graphical"
+Public Const SIMULATE_MODE_BACKGROUND = "background"
+Public Const SIMULATE_MODE_FILE_ONLY = "file_only"
+Public Const SIMULATE_MODE_EVENT_ONLY = "event_only"
