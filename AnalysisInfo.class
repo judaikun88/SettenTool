@@ -1,0 +1,235 @@
+'*******************************************************************
+'*   Ten class  : AnalysisInfo                                     *
+'*   Noi dung   : Doi tuong chua cac thong so cua lan tinh toan    *
+'*             Doc noi dung tinh toan tu file excel                *
+'*   Author: LVN-HoaPV                                             *
+'*   Date: 2022/01/22                                              *
+'*   Lich su chinh sua:                                            *
+'*   Version  | Noi dung chinh sua                                 *
+'*      1.0   | Tao moi                                            *
+'*******************************************************************
+Private analysisName As String              'Ten lan tinh toan (No1, No2....)
+Private modelName As String                 'Ten model tinh toan
+Private direction As String                 'Huong nhap luc (tren-duoi, trai-phai, truoc-sau)
+Private inputPoint As String                'Diem nhap luc (WCTR, GP)
+Private wheelNum As Integer                 'So banh (1 banh, 2 banh)
+Private inputForce As Double                'Gia tri luc
+Private normalPreload As Double             'Preload trang thai normal (1G)
+Private inputPattern As Integer             'Pattern nhap luc
+
+'*******************************************************************
+'*   Getter and setter cho cac thuoc tinh                          *
+'*******************************************************************
+Public Property Get getAnalysisName() As String
+    getAnalysisName = analysisName
+End Property
+
+Public Property Let setAnalysisName(newAnalysisName As String)
+    analysisName = newAnalysisName
+End Property
+'-------------------------------
+Public Property Get getModelName() As String
+    getModelName = modelName
+End Property
+
+Public Property Let setModelName(newModelName As String)
+    modelName = newModelName
+End Property
+
+'--------------------------------
+Public Property Get getDirection() As String
+    getDirection = direction
+End Property
+
+Public Property Let setDirection(newDirection As String)
+    direction = newDirection
+End Property
+
+'--------------------------------
+Public Property Get getInputPoint() As String
+    getInputPoint = inputPoint
+End Property
+
+Public Property Let setInputPoint(newInputPoint As String)
+    inputPoint = newInputPoint
+End Property
+
+'-------------------------------
+Public Property Get getWheelNum() As Integer
+    getWheelNum = wheelNum
+End Property
+
+Public Property Let setWheelNum(newWheelNum As Integer)
+    wheelNum = newWheelNum
+End Property
+
+'-------------------------------
+Public Property Get getInputForce() As Double
+    getInputForce = inputForce
+End Property
+
+Public Property Let setInputForce(newInputForce As Double)
+    inputForce = newInputForce
+End Property
+
+'-------------------------------
+Public Property Get getNormalPreload() As Double
+    getNormalPreload = normalPreload
+End Property
+
+Public Property Let setNormalPreload(newNormalPreload As Double)
+    normalPreload = newNormalPreload
+End Property
+
+'-------------------------------
+Public Property Get getInputPattern() As Integer
+    getInputPattern = inputPattern
+End Property
+
+Public Property Let setInputPattern(newInputPattern As Integer)
+    inputPattern = newInputPattern
+End Property
+
+'*******************************************************************
+'*   Ten phuong thuc    : readAndValidateAnalysisData              *
+'*   Noi dung: Doc thong so lan tinh toan tu file yeu cau          *
+'*             Validate thong so doc duoc                          *
+'*   List tham so:                                                 *
+'*      selectRow       : Row dang duoc chon de doc data           *
+'*      configObj       : Object chua gia tri config               *
+'*   Author: LVN-HoaPV                                             *
+'*   Date: 2022/01/22                                              *
+'*   Lich su chinh sua:                                            *
+'*   Version  | Noi dung chinh sua                                 *
+'*      1.0   | Tao moi                                            *
+'*******************************************************************
+
+Public Sub readAndValidateAnalysisData(ByVal selectRow As Integer, ByVal configObj As ConfigInfo)
+    Dim directionValidator As Hashtable
+    Dim inputPointValidator As Hashtable
+    Dim wheelNumValidator As Hashtable
+    Dim inputAnalysisName As String
+    Dim inputModelName As String
+    Dim inputDirection As String
+    Dim inputInputPoint As String
+    Dim inputWheelNum As String
+    Dim inputInputForce As String
+    Dim inputNormalPreload As String
+    Dim configWS As Worksheet
+    
+    ' Khoi tao cac bien validate
+    Set directionDict = configObj.getDirectionDictionary
+    Set inputPointDict = configObj.getInputPointDictionary
+    Set wheelNumDict = configObj.getWheelNumDictionary
+    Set configWS = configObj.getConfigWS
+    
+
+    'Doc du lieu lan tinh toan
+    inputAnalysisName = Cells(selectRow, configObj.getAnalysisNameCol).Value
+    inputModelName = configWS.Cells(3, "E").Value
+    inputDirection = Cells(selectRow, configObj.getDirectionCol)
+    inputInputPoint = Cells(selectRow, configObj.getInputPointCol)
+    inputWheelNum = Cells(selectRow, configObj.getWheelNumCol)
+    inputInputForce = Cells(selectRow, configObj.getInputForceCol)
+    
+    'Validate cac gia tri doc duoc
+    'Neu co loi thi throw sang xu li loi
+    If inputAnalysisName = "" Then
+        Call Common.catchError("Ten lan tinh toan khong duoc de trong")
+    End If
+    If IsNumeric(Left(inputAnalysisName, 1)) Then
+        Call Common.catchError("Ten lan tinh toan khong duoc bat dau bang chu so")
+    End If
+    If inputModelName = "" Then
+        Call Common.catchError("Ten model khong duoc de trong")
+    End If
+    If inputDirection = "" Then
+        Call Common.catchError("Huong nhap luc khong duoc de trong")
+    End If
+    If inputInputPoint = "" Then
+        Call Common.catchError("Diem nhap luc khong duoc de trong")
+    End If
+    If inputWheelNum = "" Then
+        Call Common.catchError("So banh khong duoc de trong")
+    End If
+    If Not directionDict.ContainsKey(inputDirection) Then
+        Call Common.catchError("Huong nhap luc chua duoc dinh nghia trong tu dien")
+    End If
+    If Not inputPointDict.ContainsKey(inputInputPoint) Then
+        Call Common.catchError("Diem nhap luc chua duoc dinh nghia trong tu dien")
+    End If
+    If Not wheelNumDict.ContainsKey(inputWheelNum) Then
+        Call Common.catchError("So banh chua duoc dinh nghia trong tu dien")
+    End If
+    If Not IsNumeric(inputInputForce) Then
+        Call Common.catchError("Gia tri luc phai la so")
+    End If
+    'Sau khi validate khong co loi, tien hanh convert sang kieu du lieu thich hop va gan cho cac thuoc tinh cua doi tuong
+    setAnalysisName = inputAnalysisName
+    setModelName = inputModelName
+    setDirection = directionDict(inputDirection)
+    setInputPoint = inputPointDict(inputInputPoint)
+    setWheelNum = wheelNumDict(inputWheelNum)
+    setInputForce = round(CDbl(inputInputForce), configObj.getInputForceRound)
+    
+    'Truong hop nhap luc tren-duong thi tien hanh doc va validate gia tri 1G
+    If (getDirection = Constant.DIRECTION_UP) Or (getDirection = Constant.DIRECTION_DOWN) Then
+        inputNormalPreload = configWS.Cells(10, "B").Value
+        If Not IsNumeric(inputNormalPreload) Then
+            Call Common.catchError("Preload normal phai la so")
+        End If
+        setNormalPreload = CDbl(inputNormalPreload)
+    End If
+End Sub
+
+'*******************************************************************
+'*   Ten phuong thuc    : determineInputPattern                    *
+'*   Noi dung: Tu du lieu doc duoc xac dinh pattern tinh toan      *
+'*   Author: LVN-HoaPV                                             *
+'*   Date: 2022/01/22                                              *
+'*   Lich su chinh sua:                                            *
+'*   Version  | Noi dung chinh sua                                 *
+'*      1.0   | Tao moi                                            *
+'*******************************************************************
+Public Sub determineInputPattern()
+    'Truong hop diem nhap luc la WCTR hoac diem tiep dat
+    If (getInputPoint = Constant.INPUT_POINT_GP) Or (getInputPoint = Constant.INPUT_POINT_WCTR) Then
+        'Xet huong nhap luc
+        Select Case getDirection
+            Case Constant.DIRECTION_L_R
+                'Truong hop nhap huong trai-phai
+                setInputPattern = Constant.PATTERN_L_R
+            Case Constant.DIRECTION_R_L
+                'Truong hop nhap huong phai-trai
+                setInputPattern = Constant.PATTERN_R_L
+            Case Constant.DIRECTION_UP
+                'Truong hop nhap huong duoi-tren
+                setInputPattern = Constant.PATTERN_U
+            Case Constant.DIRECTION_DOWN
+                'Truong hop nhap huong tren-duoi
+                setInputPattern = Constant.PATTERN_D
+            Case Constant.DIRECTION_F_B
+                'Truong hop nhap truoc-sau
+                If getInputPoint = Constant.INPUT_POINT_GP Then
+                    setInputPattern = Constant.PATTERN_F_B_GP
+                Else
+                    setInputPattern = Constant.PATTERN_F_B_WCTR
+                End If
+            Case Constant.DIRECTION_B_F
+                'Truong hop nhap sau-truoc
+                If getInputPoint = Constant.INPUT_POINT_GP Then
+                    setInputPattern = Constant.PATTERN_B_F_GP
+                Else
+                    setInputPattern = Constant.PATTERN_B_F_WCTR
+                End If
+            Case Else
+                'Truong hop khong phai cac huong tren thi gan = pattern khong ho tro
+                setInputPattern = Constant.PATTERN_UNSUPPORTED
+        End Select
+    Else
+    'Truong hop khong phai WCTR hoac diem tiep dat thi gan = pattern khong ho tro
+        setInputPattern = Constant.PATTERN_UNSUPPORTED
+    End If
+End Sub
+
+
